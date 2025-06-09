@@ -46,9 +46,7 @@ else
     echo ""
     echo "💡 Troubleshooting tips:"
     echo "1. Check if data was recently sent: ./scripts/test-mqtt.sh"
-    echo "2. Check Lambda logs: aws logs tail /aws/lambda/iot-poc-kafka-processor --since 10m"
-    echo "3. Check Kafka cluster: ./scripts/check-kafka.sh"
-    echo "4. Verify MSK cluster status: aws kafka describe-cluster --cluster-arn \$(cat outputs.json | jq -r '.IotPocStack.MSKClusterArn')"
+    echo "2. Check Lambda logs: aws logs tail /aws/lambda/iot-poc-sqs-processor --since 10m"
 fi
 
 echo ""

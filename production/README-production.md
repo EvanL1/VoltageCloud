@@ -42,7 +42,6 @@
       "Effect": "Allow",
       "Action": [
         "cloudformation:*",
-        "kafka:*",
         "lambda:*",
         "iot:*",
         "timestream:*",
@@ -67,8 +66,6 @@ export ENVIRONMENT=production
 export ALERT_EMAIL=admin@company.com
 
 # 可选的环境变量
-export KAFKA_INSTANCE_TYPE=kafka.m5.large
-export KAFKA_NUM_NODES=3
 export LAMBDA_MEMORY_MB=512
 export ENABLE_DETAILED_MONITORING=true
 ```
@@ -120,8 +117,6 @@ AWS_ACCESS_KEY_ID=your_access_key
 AWS_SECRET_ACCESS_KEY=your_secret_key
 ENVIRONMENT=production
 ALERT_EMAIL=admin@company.com
-KAFKA_INSTANCE_TYPE=kafka.m5.large
-KAFKA_NUM_NODES=3
 LAMBDA_MEMORY_MB=512
 ENABLE_DETAILED_MONITORING=true
 EOF
@@ -176,11 +171,6 @@ ENVIRONMENT=production
 STACK_NAME=IotPocStack
 PROJECT_NAME=IoT-PoC
 
-# Kafka 配置
-KAFKA_INSTANCE_TYPE=kafka.m5.large  # 生产环境推荐
-KAFKA_NUM_NODES=3                   # 高可用配置
-KAFKA_STORAGE_SIZE_GB=100          # 存储大小
-KAFKA_RETENTION_HOURS=168          # 7天保留期
 
 # Lambda 配置
 LAMBDA_MEMORY_MB=512               # 内存大小
@@ -202,14 +192,10 @@ LOG_RETENTION_DAYS=30             # 日志保留天数
 # 不同环境的配置建议
 
 # Staging 环境 (成本优化)
-KAFKA_INSTANCE_TYPE=kafka.t3.small
-KAFKA_NUM_NODES=2
 LAMBDA_MEMORY_MB=256
 ENABLE_DETAILED_MONITORING=false
 
 # Production 环境 (性能优化)
-KAFKA_INSTANCE_TYPE=kafka.m5.large
-KAFKA_NUM_NODES=3
 LAMBDA_MEMORY_MB=512
 ENABLE_DETAILED_MONITORING=true
 ```
@@ -221,15 +207,6 @@ ENABLE_DETAILED_MONITORING=true
 # 运行全面测试
 python production/test_runner.py
 
-# 手动检查 MSK 集群
-python3 -c "
-from production.deployment_manager import DeploymentManager, DeploymentConfig
-manager = DeploymentManager(DeploymentConfig())
-outputs = manager.get_stack_outputs()
-status = manager.get_msk_cluster_status(outputs['MSKClusterArn'])
-print(f'MSK状态: {status[\"state\"]}')
-print(f'节点数: {status[\"number_of_broker_nodes\"]}')
-"
 ```
 
 ### 2. 端到端测试
@@ -266,7 +243,6 @@ print(f'最近1小时记录数: {results[0][\"count\"] if results else 0}')
 
 ### 1. CloudWatch 指标
 - Lambda 执行时长和错误率
-- MSK 集群健康状态
 - TimeStream 写入吞吐量
 - S3 存储使用量
 
@@ -274,7 +250,6 @@ print(f'最近1小时记录数: {results[0][\"count\"] if results else 0}')
 ```python
 # 在 deployment_manager.py 中配置的告警
 - Lambda 错误率 > 5%
-- MSK 集群不可用
 - TimeStream 写入失败
 - S3 上传失败
 ```
@@ -318,31 +293,13 @@ aws logs tail /aws/lambda/IoTProcessorFunction --follow
 - 密钥管理：使用 AWS KMS 管理加密密钥
 
 ### 3. 网络安全
-- VPC 隔离：MSK 集群部署在私有子网
+- VPC 隔离：核心资源部署在私有子网
 - 安全组：最小权限原则
 - NAT 网关：Lambda 函数通过 NAT 访问互联网
 
 ## 💰 成本估算
 
-### 生产环境月度成本 (美国西部2区)
-```
-MSK 集群 (3 × kafka.m5.large):  $240/月
-Lambda 执行 (1M次/月):          $50/月
-TimeStream (100GB写入/月):      $100/月
-S3 存储 (1TB/月):              $20/月
-CloudWatch 日志:               $15/月
-数据传输:                      $25/月
-VPC 相关费用:                  $30/月
-----------------------------------
-总计:                          $480/月
-```
 
-### Staging 环境月度成本
-```
-MSK 集群 (2 × kafka.t3.small):  $50/月
-其他服务:                      $100/月
-----------------------------------
-总计:                          $150/月
 ```
 
 ## 🚨 故障排除
@@ -364,15 +321,6 @@ aws sts get-caller-identity
 aws cloudformation describe-stacks --stack-name IotPocStack
 ```
 
-**MSK 集群创建失败**:
-```bash
-# 检查 VPC 配置
-aws ec2 describe-vpcs
-aws ec2 describe-subnets
-
-# 检查安全组
-aws ec2 describe-security-groups
-```
 
 **Lambda 函数错误**:
 ```bash

@@ -19,10 +19,6 @@ services:
       - STACK_NAME=${STACK_NAME:-IotPocStack}
       - PROJECT_NAME=${PROJECT_NAME:-IoT-PoC}
       
-      # Kafka Configuration
-      - KAFKA_INSTANCE_TYPE=${KAFKA_INSTANCE_TYPE:-kafka.m5.large}
-      - KAFKA_NUM_NODES=${KAFKA_NUM_NODES:-3}
-      - KAFKA_STORAGE_SIZE_GB=${KAFKA_STORAGE_SIZE_GB:-100}
       
       # Lambda Configuration
       - LAMBDA_MEMORY_MB=${LAMBDA_MEMORY_MB:-512}

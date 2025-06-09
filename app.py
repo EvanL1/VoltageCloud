@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 IoT PoC CDK Application Entry Point
-MQTT → IoT Core → Kinesis → Lambda (Python/Rust) → TimeStream & S3
+MQTT → IoT Core → SQS → Lambda (Python/Rust) → TimeStream & S3
 """
 
 import aws_cdk as cdk
@@ -17,7 +17,7 @@ IotPocStack(
     app, 
     "IotPocStack",
     env=cdk.Environment(account=account, region=region),
-    description="IoT PoC: MQTT → IoT Core → Kinesis → Lambda → TimeStream & S3"
+    description="IoT PoC: MQTT → IoT Core → SQS → Lambda → TimeStream & S3"
 )
 
-app.synth() 
+app.synth()
