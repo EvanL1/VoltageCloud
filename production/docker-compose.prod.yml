@@ -1,0 +1,143 @@
+version: '3.8'
+
+services:
+  # IoT PoC Deployment Manager
+  iot-poc-deployer:
+    build:
+      context: ..
+      dockerfile: production/Dockerfile
+    container_name: iot-poc-deployer
+    environment:
+      # AWS Configuration
+      - AWS_REGION=${AWS_REGION:-us-west-2}
+      - AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      
+      # Deployment Configuration
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - STACK_NAME=${STACK_NAME:-IotPocStack}
+      - PROJECT_NAME=${PROJECT_NAME:-IoT-PoC}
+      
+      # Kafka Configuration
+      - KAFKA_INSTANCE_TYPE=${KAFKA_INSTANCE_TYPE:-kafka.m5.large}
+      - KAFKA_NUM_NODES=${KAFKA_NUM_NODES:-3}
+      - KAFKA_STORAGE_SIZE_GB=${KAFKA_STORAGE_SIZE_GB:-100}
+      
+      # Lambda Configuration
+      - LAMBDA_MEMORY_MB=${LAMBDA_MEMORY_MB:-512}
+      - LAMBDA_TIMEOUT_SECONDS=${LAMBDA_TIMEOUT_SECONDS:-60}
+      
+      # Security Configuration
+      - ENABLE_ENCRYPTION_AT_REST=${ENABLE_ENCRYPTION_AT_REST:-true}
+      - ENABLE_ENCRYPTION_IN_TRANSIT=${ENABLE_ENCRYPTION_IN_TRANSIT:-true}
+      
+      # Monitoring Configuration
+      - ENABLE_DETAILED_MONITORING=${ENABLE_DETAILED_MONITORING:-true}
+      - ENABLE_X_RAY_TRACING=${ENABLE_X_RAY_TRACING:-true}
+      - ALERT_EMAIL=${ALERT_EMAIL}
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      
+      # Resource Tagging
+      - RESOURCE_OWNER=${RESOURCE_OWNER:-platform-team}
+      - COST_CENTER=${COST_CENTER:-engineering}
+    
+    volumes:
+      - ../cdk.out:/app/cdk.out:ro
+      - ./logs:/app/logs
+      - aws-credentials:/home/deployer/.aws:ro
+    
+    networks:
+      - iot-poc-network
+    
+    restart: no
+    
+    command: ["python", "production/deployment_manager.py"]
+    
+    healthcheck:
+      test: ["CMD", "python", "-c", "import boto3; boto3.client('sts').get_caller_identity()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Test Runner Service
+  iot-poc-tester:
+    build:
+      context: ..
+      dockerfile: production/Dockerfile
+    container_name: iot-poc-tester
+    environment:
+      # AWS Configuration
+      - AWS_REGION=${AWS_REGION:-us-west-2}
+      - AWS_ACCOUNT_ID=${AWS_ACCOUNT_ID}
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      
+      # Test Configuration
+      - ENVIRONMENT=${ENVIRONMENT:-production}
+      - STACK_NAME=${STACK_NAME:-IotPocStack}
+    
+    volumes:
+      - ./logs:/app/logs
+      - aws-credentials:/home/deployer/.aws:ro
+    
+    networks:
+      - iot-poc-network
+    
+    restart: no
+    
+    command: ["python", "production/test_runner.py"]
+    
+    depends_on:
+      iot-poc-deployer:
+        condition: service_completed_successfully
+
+  # Monitoring and Logging
+  iot-poc-monitor:
+    image: prom/prometheus:latest
+    container_name: iot-poc-monitor
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=30d'
+      - '--web.enable-lifecycle'
+    networks:
+      - iot-poc-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+  # Log aggregation
+  fluentd:
+    image: fluent/fluentd:v1.16-1
+    container_name: iot-poc-logs
+    volumes:
+      - ./monitoring/fluentd.conf:/fluentd/etc/fluent.conf:ro
+      - ./logs:/var/log/iot-poc
+    environment:
+      - FLUENTD_CONF=fluent.conf
+    networks:
+      - iot-poc-network
+    restart: unless-stopped
+    profiles:
+      - monitoring
+
+volumes:
+  aws-credentials:
+    external: true
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+networks:
+  iot-poc-network:
+    driver: bridge 

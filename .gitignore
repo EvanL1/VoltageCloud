@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# CDK
+cdk.out/
+*.js.map
+*.d.ts
+node_modules/
+
+# AWS
+outputs.json
+cdk.context.json
+
+# IoT Certificates
+certs/
+*.pem
+*.crt
+*.key
+
+# Rust
+target/
+Cargo.lock
+lambda-rust/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
+
+# Temporary files
+*.tmp
+*.temp 
+SQS-MIGRATION.md
