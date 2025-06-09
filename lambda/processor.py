@@ -17,16 +17,16 @@ from botocore.exceptions import ClientError
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-# Initialize AWS clients
-ts_client = boto3.client("timestream-write")
-s3_client = boto3.client("s3")
-
 # Environment variables
 DB = os.environ["TDB"]
 TBL = os.environ["TBL"]
 BUCKET = os.environ["BUCKET"]
 REGION = os.environ["REGION"]
 SQS_QUEUE_URL = os.environ.get("SQS_QUEUE_URL", "")
+
+# Initialize AWS clients with explicit region
+ts_client = boto3.client("timestream-write", region_name=REGION)
+s3_client = boto3.client("s3", region_name=REGION)
 
 
 def extract_device_id(payload: Dict[str, Any]) -> str:

@@ -146,6 +146,8 @@ Lambda函数使用以下环境变量（CDK自动设置）：
 - `TBL`: TimeStream表名称  
 - `BUCKET`: S3存储桶名称
 - `REGION`: AWS区域
+  
+CDK会在部署Lambda时自动设置该变量，确保在创建boto3客户端时使用期望的AWS区域。
 
 ### IoT Topic格式
 
