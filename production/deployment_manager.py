@@ -28,8 +28,9 @@ class DeploymentConfig:
     stack_name: str = "IotPocStack"
     region: str = "us-west-2"
     environment: str = "production"
-    kafka_instance_type: str = "kafka.m5.large"  # Production instance
-    kafka_nodes: int = 3  # Production HA setup
+    # Legacy Kafka parameters (not used in SQS pipeline)
+    kafka_instance_type: str = "kafka.m5.large"
+    kafka_nodes: int = 3
     kafka_storage_size: int = 100  # GB
     lambda_memory: int = 512  # MB
     lambda_timeout: int = 60  # seconds

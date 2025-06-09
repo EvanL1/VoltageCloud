@@ -45,9 +45,6 @@ fi
 
 echo ""
 echo "🔍 Next steps:"
-echo "1. Check Kafka cluster status: ./scripts/check-kafka.sh"
-echo "2. Test MQTT connection: ./scripts/test-mqtt.sh"
-echo "3. Query TimeStream data: ./scripts/query-timestream.sh"
-echo "4. Monitor Lambda logs: aws logs tail /aws/lambda/iot-poc-kafka-processor --follow"
-echo ""
-echo "⏳ Note: MSK cluster creation takes 10-15 minutes. Please wait for ACTIVE status before testing." 
+echo "1. Test MQTT connection: ./scripts/test-mqtt.sh"
+echo "2. Query TimeStream data: ./scripts/query-timestream.sh"
+echo "3. Monitor Lambda logs: aws logs tail /aws/lambda/iot-poc-sqs-processor --follow"

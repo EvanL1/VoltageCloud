@@ -196,13 +196,7 @@ Rust版本提供了：
 
 ```bash
 # Lambda函数日志
-aws logs tail /aws/lambda/iot-poc-kafka-processor --follow
-
-# 查看Kafka集群状态
-./scripts/check-kafka.sh
-
-# 查看MSK集群详情
-aws kafka describe-cluster --cluster-arn $(cat outputs.json | jq -r '.IotPocStack.MSKClusterArn')
+aws logs tail /aws/lambda/iot-poc-sqs-processor --follow
 ```
 
 ### TimeStream查询示例
@@ -243,14 +237,10 @@ aws s3 cp s3://{bucket-name}/raw/device01/2024/01/15/1234567890.json -
 | 服务 | 估算成本 | 说明 |
 |------|----------|------|
 | IoT Core | ~$0.10 | 按消息计费 |
-| Amazon MSK | ~$3.50 | 2个kafka.t3.small实例24小时 |
 | VPC NAT Gateway | ~$1.00 | 1个NAT网关24小时 |
-| Lambda | ~$0.10 | 按调用次数和执行时间（VPC冷启动较慢） |
+| Lambda | ~$0.10 | 按调用次数和执行时间 |
 | TimeStream | ~$0.80 | 写入和存储费用 |
 | S3 | ~$0.05 | 存储和请求费用 |
-| EBS | ~$0.05 | Kafka存储卷 |
-
-**注意**: MSK是按小时计费的托管服务，比Kinesis成本略高，但提供了企业级的Kafka功能。
 
 ## 🧹 清理资源
 
@@ -276,7 +266,7 @@ aws s3 cp s3://{bucket-name}/raw/device01/2024/01/15/1234567890.json -
 
 2. **Lambda没有收到数据**
    - 检查IoT Topic Rule配置
-   - 验证Kinesis流权限
+   - 验证SQS队列权限
    - 查看Lambda事件源配置
 
 3. **TimeStream写入失败**
@@ -318,7 +308,7 @@ aws cloudformation describe-stack-events --stack-name IotPocStack
    - 使用AWS IoT Events规则引擎
 
 3. **可扩展性**
-   - 增加Kinesis分片数量
+   - 调整SQS并发设置
    - 使用Lambda预留并发
    - 实施TimeStream分区策略
 
@@ -330,7 +320,7 @@ aws cloudformation describe-stack-events --stack-name IotPocStack
 ## 📚 相关文档
 
 - [AWS IoT Core文档](https://docs.aws.amazon.com/iot/)
-- [Amazon Kinesis文档](https://docs.aws.amazon.com/kinesis/)
+- [Amazon SQS文档](https://docs.aws.amazon.com/sqs/)
 - [Amazon TimeStream文档](https://docs.aws.amazon.com/timestream/)
 - [AWS CDK Python文档](https://docs.aws.amazon.com/cdk/api/v2/python/)
 - [AWS Lambda文档](https://docs.aws.amazon.com/lambda/)

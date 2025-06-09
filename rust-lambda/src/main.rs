@@ -1,5 +1,5 @@
 /// IoT PoC Lambda Processor in Rust
-/// Processes Kinesis records and writes to TimeStream and S3
+/// (Legacy) Processes Kinesis records and writes to TimeStream and S3
 
 use anyhow::{Context, Result};
 use aws_config::BehaviorVersion;

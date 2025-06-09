@@ -83,7 +83,6 @@ fi
 
 echo ""
 echo "🔍 Next steps:"
-echo "1. Check Lambda logs: aws logs tail /aws/lambda/iot-poc-kafka-processor --since 1m --follow"
+echo "1. Check Lambda logs: aws logs tail /aws/lambda/iot-poc-sqs-processor --since 1m --follow"
 echo "2. Query TimeStream: ./scripts/query-timestream.sh"
 echo "3. Check S3 data: aws s3 ls s3://\$(cat outputs.json | jq -r '.IotPocStack.S3BucketName')/raw/ --recursive"
-echo "4. Check Kafka topic: ./scripts/check-kafka.sh" 
