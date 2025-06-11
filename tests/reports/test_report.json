@@ -1,0 +1,58 @@
+{
+  "timestamp": "2025-06-11T13:55:07.211134",
+  "conda_env": "iot-testing",
+  "python_executable": "python",
+  "test_results": {
+    "unit": {
+      "file": "/Users/lyf/dev/cloud/tests/reports/unit_tests.xml",
+      "exists": true
+    },
+    "integration": {
+      "file": "/Users/lyf/dev/cloud/tests/reports/integration_tests.xml",
+      "exists": false
+    },
+    "infrastructure": {
+      "file": "/Users/lyf/dev/cloud/tests/reports/infrastructure_tests.xml",
+      "exists": false
+    },
+    "lambda": {
+      "file": "/Users/lyf/dev/cloud/tests/reports/lambda_tests.xml",
+      "exists": false
+    },
+    "api": {
+      "file": "/Users/lyf/dev/cloud/tests/reports/api_tests.xml",
+      "exists": false
+    },
+    "etl": {
+      "file": "/Users/lyf/dev/cloud/tests/reports/etl_tests.xml",
+      "exists": false
+    },
+    "all": {
+      "file": "/Users/lyf/dev/cloud/tests/reports/all_tests.xml",
+      "exists": false
+    }
+  },
+  "coverage": {
+    "unit": {
+      "directory": "/Users/lyf/dev/cloud/tests/reports/unit_coverage",
+      "exists": true
+    },
+    "integration": {
+      "directory": "/Users/lyf/dev/cloud/tests/reports/integration_coverage",
+      "exists": false
+    },
+    "infrastructure": {
+      "directory": "/Users/lyf/dev/cloud/tests/reports/infrastructure_coverage",
+      "exists": false
+    },
+    "lambda": {
+      "directory": "/Users/lyf/dev/cloud/tests/reports/lambda_coverage",
+      "exists": false
+    },
+    "full": {
+      "directory": "/Users/lyf/dev/cloud/tests/reports/full_coverage",
+      "exists": false
+    }
+  },
+  "performance": {}
+}

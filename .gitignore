@@ -50,3 +50,5 @@ Thumbs.db
 *.tmp
 *.temp 
 SQS-MIGRATION.md
+*.xml
+tests/reports/parallel_tests.xml

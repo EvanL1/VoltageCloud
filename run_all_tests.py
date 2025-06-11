@@ -80,12 +80,7 @@ class UltimateTestRunner:
                 'fast': False,
                 'critical': False
             },
-            'rust': {
-                'name': '🦀 Rust Tests',
-                'command': ['python', 'tests/test_runner.py', 'rust', '-v'],
-                'fast': True,
-                'critical': True
-            }
+
         }
     
     def print_colored(self, message: str, color: str = 'WHITE'):

@@ -6,7 +6,7 @@ import pytest
 import boto3
 import json
 import os
-from moto import mock_dynamodb, mock_s3, mock_lambda, mock_sqs, mock_iot, mock_timestream_write
+from moto import mock_aws
 from unittest.mock import Mock, patch
 import aws_cdk as cdk
 from aws_cdk.assertions import Template
@@ -25,7 +25,7 @@ def aws_credentials():
 @pytest.fixture
 def mock_dynamodb_table(aws_credentials):
     """Create a mocked DynamoDB table for testing."""
-    with mock_dynamodb():
+    with mock_aws():
         dynamodb = boto3.resource('dynamodb', region_name='us-east-1')
         table = dynamodb.create_table(
             TableName='test-device-shadow',
@@ -44,7 +44,7 @@ def mock_dynamodb_table(aws_credentials):
 @pytest.fixture
 def mock_s3_bucket(aws_credentials):
     """Create a mocked S3 bucket for testing."""
-    with mock_s3():
+    with mock_aws():
         s3 = boto3.client('s3', region_name='us-east-1')
         bucket_name = 'test-iot-data-bucket'
         s3.create_bucket(Bucket=bucket_name)
@@ -54,7 +54,7 @@ def mock_s3_bucket(aws_credentials):
 @pytest.fixture
 def mock_sqs_queue(aws_credentials):
     """Create a mocked SQS queue for testing."""
-    with mock_sqs():
+    with mock_aws():
         sqs = boto3.client('sqs', region_name='us-east-1')
         queue_url = sqs.create_queue(QueueName='test-iot-data-queue')['QueueUrl']
         yield queue_url
@@ -63,7 +63,7 @@ def mock_sqs_queue(aws_credentials):
 @pytest.fixture
 def mock_timestream_database(aws_credentials):
     """Create a mocked TimeStream database for testing."""
-    with mock_timestream_write():
+    with mock_aws():
         timestream = boto3.client('timestream-write', region_name='us-east-1')
         database_name = 'test-iot-database'
         table_name = 'test-iot-table'

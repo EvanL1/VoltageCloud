@@ -3,10 +3,10 @@
 [![AWS](https://img.shields.io/badge/AWS-IoT%20Core-orange.svg)](https://aws.amazon.com/iot-core/)
 [![SQS](https://img.shields.io/badge/Amazon-SQS-green.svg)](https://aws.amazon.com/sqs/)
 [![Python](https://img.shields.io/badge/Python-3.12-blue.svg)](https://www.python.org/)
-[![Rust](https://img.shields.io/badge/Rust-1.70+-red.svg)](https://www.rust-lang.org/)
+
 [![CDK](https://img.shields.io/badge/AWS%20CDK-2.x-yellow.svg)](https://aws.amazon.com/cdk/)
 
-一个完整的IoT数据管道演示项目，展示了 **MQTT → IoT Core → SQS → Lambda → TimeStream & S3** 的现代化物联网架构。使用Amazon SQS完全托管消息队列，支持Python和Rust两种Lambda实现方式，使用AWS CDK进行一键部署。
+一个完整的IoT数据管道演示项目，展示了 **MQTT → IoT Core → SQS → Lambda → TimeStream & S3** 的现代化物联网架构。使用Amazon SQS完全托管消息队列，采用Python Lambda实现，使用AWS CDK进行一键部署。
 
 ## 🏗️ 架构概览
 
@@ -55,8 +55,26 @@ graph LR
 - Python 3.8+ 和 pip
 - Node.js（CDK CLI依赖）
 - jq（JSON处理工具）
+- Conda 或 Miniconda（推荐用于测试环境）
 
 ### 安装依赖
+
+#### 方法一：使用Conda（推荐）
+
+```bash
+# 克隆项目
+git clone <repository-url>
+cd iot-poc
+
+# 创建并激活conda环境
+conda env create -f environment-testing.yml
+conda activate iot-testing
+
+# 安装CDK CLI (如果还没有)
+npm install -g aws-cdk
+```
+
+#### 方法二：使用Python虚拟环境
 
 ```bash
 # 克隆项目
@@ -123,15 +141,14 @@ iot-poc/
 │   └── iot_poc_stack.py      # 主要基础设施定义
 ├── lambda/
 │   └── processor.py          # Python Lambda处理器
-├── rust-lambda/              # Rust Lambda实现（可选）
-│   ├── Cargo.toml
-│   └── src/main.rs
+
+
 ├── scripts/                  # 部署和管理脚本
 │   ├── deploy.sh            # 部署脚本
 │   ├── test-mqtt.sh         # MQTT测试
 │   ├── query-timestream.sh  # TimeStream查询
 │   ├── setup-certificates.sh # IoT证书设置
-│   ├── build-rust.sh        # Rust构建（可选）
+
 │   └── cleanup.sh           # 资源清理
 └── README.md
 ```
@@ -167,30 +184,84 @@ devices/{device_id}/data
 }
 ```
 
-## 🦀 Rust Lambda版本（可选）
 
-如果你想使用Rust替代Python Lambda：
+
+## 🧪 测试
+
+项目提供了完整的测试套件，支持多种测试类型和conda环境运行。
+
+### 使用Conda运行测试（推荐）
 
 ```bash
-# 1. 安装Rust工具链
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-cargo install cargo-lambda
+# 快速设置测试环境
+./run_tests_conda.sh --setup
 
-# 2. 构建Rust Lambda
-./scripts/build-rust.sh
+# 激活测试环境
+conda activate iot-testing
 
-# 3. 修改CDK配置使用Rust版本
-# 编辑 iot_poc/iot_poc_stack.py，取消注释Rust配置部分
+# 运行所有测试
+./run_tests_conda.sh all -v -r
 
-# 4. 重新部署
-cdk deploy
+# 运行特定类型的测试
+./run_tests_conda.sh unit -v          # 单元测试
+./run_tests_conda.sh integration -v   # 集成测试
+./run_tests_conda.sh e2e -v          # 端到端测试
+./run_tests_conda.sh performance -v   # 性能测试
+
+# 在特定conda环境中运行测试
+./run_tests_conda.sh --env my-env unit
+
+# 查看环境信息
+./run_tests_conda.sh info
 ```
 
-Rust版本提供了：
-- ⚡ 更快的冷启动时间
-- 💪 更高的运行时性能  
-- 🔒 内存安全保证
-- 📦 更小的部署包大小
+### 使用Python直接运行测试
+
+```bash
+# 运行所有测试
+python tests/test_runner.py all --verbose --report
+
+# 运行特定测试类型
+python tests/test_runner.py unit --verbose
+python tests/test_runner.py integration --verbose
+python tests/test_runner.py lambda --verbose
+
+# 并行运行测试（更快）
+python tests/test_runner.py all --parallel --verbose
+```
+
+### 测试类型说明
+
+- **unit**: 单元测试（业务逻辑，数据处理）
+- **integration**: 集成测试（AWS服务集成）
+- **e2e**: 端到端测试（完整流程测试）
+- **infrastructure**: 基础设施测试（CDK构造测试）
+- **lambda**: Lambda函数测试
+- **api**: API端点测试
+- **etl**: ETL管道测试
+- **performance**: 性能和基准测试
+
+- **monitoring**: 监控测试
+
+### 测试报告
+
+测试完成后，报告将生成在 `tests/reports/` 目录：
+
+- **覆盖率报告**: `tests/reports/full_coverage/index.html`
+- **测试结果**: `tests/reports/all_tests.xml` (JUnit格式)
+- **基准测试**: `tests/reports/benchmark.json`
+- **汇总报告**: `tests/reports/test_report.json`
+
+### 环境配置
+
+测试环境包含以下关键依赖：
+
+- **pytest**: 测试框架
+- **pytest-cov**: 覆盖率测试
+- **pytest-xdist**: 并行测试
+- **pytest-benchmark**: 性能基准测试
+- **moto**: AWS服务模拟
+- **pytest-asyncio**: 异步测试支持
 
 ## 📊 监控和调试
 

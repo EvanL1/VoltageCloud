@@ -33,7 +33,7 @@ show_help() {
     echo "  etl           Run ETL pipeline tests"
     echo "  e2e           Run end-to-end tests"
     echo "  performance   Run performance tests"
-    echo "  rust          Run Rust Lambda tests"
+    echo ""
     echo "  all           Run all tests (default)"
     echo ""
     echo "Options:"
@@ -52,7 +52,7 @@ show_help() {
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
-        unit|integration|infrastructure|lambda|api|etl|e2e|performance|rust|all)
+        unit|integration|infrastructure|lambda|api|etl|e2e|performance|all)
             TEST_TYPE="$1"
             shift
             ;;

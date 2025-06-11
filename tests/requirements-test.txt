@@ -39,8 +39,9 @@ pytest-benchmark>=4.0.0
 pytest-html>=3.2.0
 pytest-json-report>=1.5.0
 
-# Rust testing (for cargo test integration)
-pytest-rust>=0.1.0
+# Security scanning
+bandit>=1.7.5
+safety>=2.3.4
 
-# Mock AWS CLI
-awscli-local>=0.21.0 
+# Additional development tools
+psutil>=5.9.0 
