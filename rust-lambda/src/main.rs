@@ -295,16 +295,29 @@ async fn main() -> Result<(), Error> {
 mod tests {
     use super::*;
     use serde_json::json;
+    use aws_sdk_s3::Client as S3Client;
+    use aws_sdk_timestream::Client as TimestreamClient;
+    use aws_config::SdkConfig;
+
+    /// Create a mock processor for testing
+    fn create_test_processor() -> IotProcessor {
+        // Create mock SDK config
+        let mock_config = SdkConfig::builder()
+            .region(aws_sdk_s3::config::Region::new("us-east-1"))
+            .build();
+        
+        IotProcessor {
+            s3_client: S3Client::new(&mock_config),
+            timestream_client: TimestreamClient::new(&mock_config),
+            database_name: "test_database".to_string(),
+            table_name: "test_table".to_string(),
+            bucket_name: "test-bucket".to_string(),
+        }
+    }
 
     #[test]
     fn test_extract_device_id_with_topic() {
-        let processor = IotProcessor {
-            s3_client: todo!(),
-            timestream_client: todo!(),
-            database_name: "test".to_string(),
-            table_name: "test".to_string(),
-            bucket_name: "test".to_string(),
-        };
+        let processor = create_test_processor();
 
         let mut payload = Map::new();
         payload.insert("source_topic".to_string(), json!("devices/sensor01/data"));
@@ -315,14 +328,20 @@ mod tests {
     }
 
     #[test]
+    fn test_extract_device_id_with_direct_field() {
+        let processor = create_test_processor();
+
+        let mut payload = Map::new();
+        payload.insert("device_id".to_string(), json!("device123"));
+        payload.insert("temp".to_string(), json!(25.0));
+
+        let device_id = processor.extract_device_id(&payload);
+        assert_eq!(device_id, "device123");
+    }
+
+    #[test]
     fn test_extract_device_id_fallback() {
-        let processor = IotProcessor {
-            s3_client: todo!(),
-            timestream_client: todo!(),
-            database_name: "test".to_string(),
-            table_name: "test".to_string(),
-            bucket_name: "test".to_string(),
-        };
+        let processor = create_test_processor();
 
         let mut payload = Map::new();
         payload.insert("temp".to_string(), json!(25.0));
@@ -332,14 +351,20 @@ mod tests {
     }
 
     #[test]
-    fn test_create_timestream_records() {
-        let processor = IotProcessor {
-            s3_client: todo!(),
-            timestream_client: todo!(),
-            database_name: "test".to_string(),
-            table_name: "test".to_string(),
-            bucket_name: "test".to_string(),
-        };
+    fn test_extract_device_id_complex_topic() {
+        let processor = create_test_processor();
+
+        let mut payload = Map::new();
+        payload.insert("source_topic".to_string(), json!("iot/production/devices/sensor_temp_001/telemetry"));
+        payload.insert("temp".to_string(), json!(25.0));
+
+        let device_id = processor.extract_device_id(&payload);
+        assert_eq!(device_id, "sensor_temp_001");
+    }
+
+    #[test]
+    fn test_create_timestream_records_basic() {
+        let processor = create_test_processor();
 
         let mut payload = Map::new();
         payload.insert("temp".to_string(), json!(25.5));
@@ -349,5 +374,185 @@ mod tests {
 
         let records = processor.create_timestream_records("test_device", &payload);
         assert_eq!(records.len(), 2); // temp and humidity
+
+        // Verify the structure of the first record
+        let temp_record = &records[0];
+        assert_eq!(temp_record.measure_name(), Some("value"));
+        assert_eq!(temp_record.measure_value(), Some("25.5"));
+    }
+
+    #[test]
+    fn test_create_timestream_records_excludes_non_numeric() {
+        let processor = create_test_processor();
+
+        let mut payload = Map::new();
+        payload.insert("temp".to_string(), json!(25.5));
+        payload.insert("status".to_string(), json!("online"));
+        payload.insert("device_name".to_string(), json!("Sensor01"));
+        payload.insert("pressure".to_string(), json!(1013.25));
+        payload.insert("ts".to_string(), json!(1717910400));
+
+        let records = processor.create_timestream_records("test_device", &payload);
+        // Should only include temp and pressure (numeric values)
+        assert_eq!(records.len(), 2);
+    }
+
+    #[test]
+    fn test_create_timestream_records_excludes_system_fields() {
+        let processor = create_test_processor();
+
+        let mut payload = Map::new();
+        payload.insert("temp".to_string(), json!(25.5));
+        payload.insert("ts".to_string(), json!(1717910400)); // Should be excluded
+        payload.insert("source_topic".to_string(), json!("devices/test/data")); // Should be excluded
+        payload.insert("device_id".to_string(), json!("test_device")); // Should be excluded
+
+        let records = processor.create_timestream_records("test_device", &payload);
+        // Should only include temp
+        assert_eq!(records.len(), 1);
+    }
+
+    #[test]
+    fn test_create_timestream_records_with_integer_values() {
+        let processor = create_test_processor();
+
+        let mut payload = Map::new();
+        payload.insert("count".to_string(), json!(42));
+        payload.insert("voltage".to_string(), json!(3.3));
+        payload.insert("ts".to_string(), json!(1717910400));
+
+        let records = processor.create_timestream_records("test_device", &payload);
+        assert_eq!(records.len(), 2);
+
+        // Check that integer is properly converted to f64
+        let count_record = records.iter().find(|r| {
+            r.dimensions().iter().any(|d| d.value() == Some("count"))
+        }).unwrap();
+        assert_eq!(count_record.measure_value(), Some("42"));
+    }
+
+    #[test]
+    fn test_processing_result_serialization() {
+        let result = ProcessingResult {
+            status_code: 200,
+            successful_records: 5,
+            failed_records: 1,
+            timestream_records: 10,
+            timestream_success: true,
+        };
+
+        let json_str = serde_json::to_string(&result).unwrap();
+        let parsed: ProcessingResult = serde_json::from_str(&json_str).unwrap();
+
+        assert_eq!(parsed.status_code, 200);
+        assert_eq!(parsed.successful_records, 5);
+        assert_eq!(parsed.failed_records, 1);
+        assert_eq!(parsed.timestream_records, 10);
+        assert_eq!(parsed.timestream_success, true);
+    }
+
+    #[test]
+    fn test_kinesis_event_deserialization() {
+        let json_data = json!({
+            "Records": [
+                {
+                    "kinesis": {
+                        "data": "eyJkZXZpY2VfaWQiOiJ0ZXN0X2RldmljZSIsInRlbXAiOjI1LjV9" // base64 encoded JSON
+                    },
+                    "eventSourceARN": "arn:aws:kinesis:us-east-1:123456789012:stream/test-stream"
+                }
+            ]
+        });
+
+        let event: KinesisEvent = serde_json::from_value(json_data).unwrap();
+        assert_eq!(event.records.len(), 1);
+        assert!(event.records[0].event_source_arn.is_some());
+    }
+
+    #[test]
+    fn test_model_srv_error_display() {
+        let s3_error = ModelSrvError::S3Error("Test S3 error".to_string());
+        assert!(s3_error.to_string().contains("S3 operation failed"));
+
+        let timestream_error = ModelSrvError::TimeStreamError("Test TimeStream error".to_string());
+        assert!(timestream_error.to_string().contains("TimeStream operation failed"));
+
+        let processing_error = ModelSrvError::ProcessingError("Test processing error".to_string());
+        assert!(processing_error.to_string().contains("Data processing error"));
+    }
+
+    #[test]
+    fn test_empty_payload_handling() {
+        let processor = create_test_processor();
+        let empty_payload = Map::new();
+
+        let device_id = processor.extract_device_id(&empty_payload);
+        assert!(device_id.starts_with("unknown_"));
+
+        let records = processor.create_timestream_records("test_device", &empty_payload);
+        assert_eq!(records.len(), 0);
+    }
+
+    #[test] 
+    fn test_payload_with_null_values() {
+        let processor = create_test_processor();
+
+        let mut payload = Map::new();
+        payload.insert("temp".to_string(), json!(25.5));
+        payload.insert("invalid_field".to_string(), json!(null));
+        payload.insert("humidity".to_string(), json!(60.0));
+
+        let records = processor.create_timestream_records("test_device", &payload);
+        // Should only include temp and humidity, excluding null value
+        assert_eq!(records.len(), 2);
+    }
+
+    #[test]
+    fn test_device_id_extraction_edge_cases() {
+        let processor = create_test_processor();
+
+        // Test with malformed topic
+        let mut payload1 = Map::new();
+        payload1.insert("source_topic".to_string(), json!("malformed"));
+        let device_id1 = processor.extract_device_id(&payload1);
+        assert!(device_id1.starts_with("unknown_"));
+
+        // Test with empty topic
+        let mut payload2 = Map::new();
+        payload2.insert("source_topic".to_string(), json!(""));
+        let device_id2 = processor.extract_device_id(&payload2);
+        assert!(device_id2.starts_with("unknown_"));
+
+        // Test with topic that doesn't contain "devices"
+        let mut payload3 = Map::new();
+        payload3.insert("source_topic".to_string(), json!("sensors/temp001/data"));
+        let device_id3 = processor.extract_device_id(&payload3);
+        assert!(device_id3.starts_with("unknown_"));
+    }
+
+    /// Test utility function to create a valid Kinesis record
+    fn create_test_kinesis_record(payload: &Map<String, Value>) -> KinesisRecord {
+        use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64_STANDARD};
+        
+        let payload_json = serde_json::to_string(payload).unwrap();
+        let encoded_data = BASE64_STANDARD.encode(payload_json.as_bytes());
+
+        KinesisRecord {
+            kinesis: KinesisData {
+                data: encoded_data,
+            },
+            event_source_arn: Some("arn:aws:kinesis:us-east-1:123456789012:stream/test".to_string()),
+        }
+    }
+
+    #[test]
+    fn test_kinesis_record_creation() {
+        let mut payload = Map::new();
+        payload.insert("device_id".to_string(), json!("test_device"));
+        payload.insert("temp".to_string(), json!(25.5));
+
+        let record = create_test_kinesis_record(&payload);
+        assert!(!record.kinesis.data.is_empty());
+        assert!(record.event_source_arn.is_some());
     }
 } 
