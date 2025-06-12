@@ -404,44 +404,57 @@ def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     
     try:
         # Routes handling
-        if "/users" in path and method == "GET":
+        segments = path.strip("/").split("/")
+
+        if path == "/users" and method == "GET":
             # Get all users (admin only)
             if current_user_role != "admin":
                 return {
                     "statusCode": 403,
                     "body": {"error": "Insufficient permissions"}
                 }
-            
+
             role_filter = query_parameters.get("role")
             return get_all_users(role_filter)
-            
-        elif "/users/{user_id}" in path and method == "GET":
+
+        elif len(segments) == 2 and segments[0] == "users" and method == "GET":
             # Get specific user profile
             target_user_id = path_parameters.get("user_id")
-            
+
             # Users can only access their own profile unless they're admin
             if current_user_role != "admin" and current_user_id != target_user_id:
                 return {
                     "statusCode": 403,
                     "body": {"error": "Insufficient permissions"}
                 }
-            
+
             return get_user_profile(target_user_id)
-            
-        elif "/users/{user_id}/permissions" in path and method == "GET":
+
+        elif (
+            len(segments) == 3
+            and segments[0] == "users"
+            and segments[2] == "permissions"
+            and method == "GET"
+        ):
             # Get user's device permissions
             target_user_id = path_parameters.get("user_id")
-            
+
             # Users can only access their own permissions unless they're admin
             if current_user_role != "admin" and current_user_id != target_user_id:
                 return {
                     "statusCode": 403,
                     "body": {"error": "Insufficient permissions"}
                 }
-            
+
             return get_user_device_permissions(target_user_id)
-            
-        elif "/users/{user_id}/permissions/devices" in path and method == "POST":
+
+        elif (
+            len(segments) == 4
+            and segments[0] == "users"
+            and segments[2] == "permissions"
+            and segments[3] == "devices"
+            and method == "POST"
+        ):
             # Grant device permissions (admin only)
             if current_user_role != "admin":
                 return {
