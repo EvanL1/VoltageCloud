@@ -130,32 +130,34 @@ def save_to_s3(device_id: str, payload: Dict[str, Any]) -> bool:
 
 
 def write_to_timestream(records: List[Dict[str, Any]]) -> bool:
-    """
-    Write records to TimeStream
-    
-    Args:
-        records: List of TimeStream records
-        
-    Returns:
-        True if successful, False otherwise
-    """
+    """Write records to TimeStream in chunks of 100."""
+
     if not records:
         logger.info("No records to write to TimeStream")
         return True
-        
-    try:
-        response = ts_client.write_records(
-            DatabaseName=DB,
-            TableName=TBL,
-            Records=records
-        )
-        
+
+    success = True
+    chunk_size = 100
+
+    for i in range(0, len(records), chunk_size):
+        chunk = records[i : i + chunk_size]
+        try:
+            ts_client.write_records(
+                DatabaseName=DB,
+                TableName=TBL,
+                Records=chunk,
+            )
+            logger.info(f"Wrote {len(chunk)} records to TimeStream")
+        except ClientError as e:
+            logger.error(f"Failed to write records chunk starting at {i}: {e}")
+            success = False
+
+    if success:
         logger.info(f"Successfully wrote {len(records)} records to TimeStream")
-        return True
-        
-    except ClientError as e:
-        logger.error(f"Failed to write to TimeStream: {e}")
-        return False
+    else:
+        logger.error("One or more record batches failed to write to TimeStream")
+
+    return success
 
 
 def handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
