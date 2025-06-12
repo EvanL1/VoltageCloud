@@ -4,7 +4,7 @@ Implements user authentication, authorization, and management for IoT platform
 """
 
 from aws_cdk import (
-    Stack, Duration, CfnOutput,
+    Stack, Duration, CfnOutput, RemovalPolicy,
     aws_cognito as cognito,
     aws_lambda as _lambda,
     aws_iam as iam,
@@ -46,7 +46,7 @@ class AuthStack(Stack):
                 otp=True
             ),
             account_recovery=cognito.AccountRecovery.EMAIL_ONLY,
-            removal_policy=Stack.of(self).removal_policy
+            removal_policy=RemovalPolicy.DESTROY
         )
 
         # User Pool Client for web/mobile apps
@@ -89,7 +89,7 @@ class AuthStack(Stack):
             ),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             point_in_time_recovery=True,
-            removal_policy=Stack.of(self).removal_policy
+            removal_policy=RemovalPolicy.DESTROY
         )
 
         # Add GSI for role-based queries
@@ -118,7 +118,7 @@ class AuthStack(Stack):
                 type=dynamodb.AttributeType.STRING
             ),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
-            removal_policy=Stack.of(self).removal_policy
+            removal_policy=RemovalPolicy.DESTROY
         )
 
         # 5️⃣ Lambda authorizer function
