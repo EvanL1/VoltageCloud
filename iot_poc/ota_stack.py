@@ -4,7 +4,7 @@ Implements device firmware update functionality using AWS IoT Device Management
 """
 
 from aws_cdk import (
-    Stack, Duration, CfnOutput,
+    Stack, Duration, CfnOutput, RemovalPolicy,
     aws_iot as iot,
     aws_s3 as s3,
     aws_lambda as _lambda,
@@ -56,7 +56,7 @@ class OtaStack(Stack):
             ),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             point_in_time_recovery=True,
-            removal_policy=Stack.of(self).removal_policy
+            removal_policy=RemovalPolicy.DESTROY
         )
 
         # Add GSI for device-based queries
@@ -85,7 +85,7 @@ class OtaStack(Stack):
                 type=dynamodb.AttributeType.STRING
             ),
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
-            removal_policy=Stack.of(self).removal_policy
+            removal_policy=RemovalPolicy.DESTROY
         )
 
         # 4️⃣ Lambda function for OTA management

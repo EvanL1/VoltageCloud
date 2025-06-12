@@ -4,7 +4,7 @@ Implements AWS IoT Device Shadow service for device state management
 """
 
 from aws_cdk import (
-    Stack, Duration, CfnOutput,
+    Stack, Duration, CfnOutput, RemovalPolicy,
     aws_iot as iot,
     aws_lambda as _lambda,
     aws_iam as iam,
@@ -39,7 +39,7 @@ class DeviceShadowStack(Stack):
             billing_mode=dynamodb.BillingMode.PAY_PER_REQUEST,
             time_to_live_attribute="ttl",
             point_in_time_recovery=True,
-            removal_policy=Stack.of(self).removal_policy
+            removal_policy=RemovalPolicy.DESTROY
         )
 
         # Add GSI for querying by status
