@@ -11,6 +11,7 @@ from aws_cdk import (
     aws_logs as logs,
     aws_iam as iam,
     aws_route53 as route53,
+    aws_route53_targets as route53_targets,
     aws_certificatemanager as acm,
     aws_servicediscovery as servicediscovery,
     aws_apigateway as apigateway,
