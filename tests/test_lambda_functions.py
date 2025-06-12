@@ -422,7 +422,47 @@ class TestLambdaIntegration:
         }
         
         response = integrated_handler(event, lambda_context)
-        
+
         assert response['statusCode'] == 200
         body = json.loads(response['body'])
-        assert body['processed'] == 1 
+        assert body['processed'] == 1
+
+
+class TestProcessorChunking:
+    """Tests for write_to_timestream chunking logic."""
+
+    def test_write_to_timestream_chunking(self, monkeypatch):
+        os.environ['TDB'] = 'test-db'
+        os.environ['TBL'] = 'test-table'
+        os.environ['BUCKET'] = 'test-bucket'
+        os.environ['REGION'] = 'us-east-1'
+
+        import importlib
+        processor = importlib.import_module('lambda.processor')
+        write_to_timestream = processor.write_to_timestream
+        ts_client = processor.ts_client
+
+        calls = []
+
+        def mock_write_records(**kwargs):
+            calls.append(len(kwargs.get('Records', [])))
+            return {}
+
+        monkeypatch.setattr(ts_client, 'write_records', mock_write_records)
+
+        records = [
+            {
+                'Dimensions': [],
+                'MeasureName': 'value',
+                'MeasureValue': '0',
+                'MeasureValueType': 'DOUBLE',
+                'Time': str(i),
+                'TimeUnit': 'MILLISECONDS',
+            }
+            for i in range(250)
+        ]
+
+        result = write_to_timestream(records)
+
+        assert result is True
+        assert calls == [100, 100, 50]
