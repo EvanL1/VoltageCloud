@@ -184,9 +184,15 @@ def create_ota_job(device_targets: List[str], firmware_version: str, device_type
         }
         
         # Create IoT job
+        # Resolve AWS account ID using STS to avoid parsing credentials
+        account_id = boto3.client("sts").get_caller_identity()["Account"]
+
         iot_response = iot_client.create_job(
             jobId=job_id,
-            targets=[f"arn:aws:iot:{REGION}:{boto3.Session().get_credentials().access_key.split(':')[4]}:thing/{device_id}" for device_id in device_targets],
+            targets=[
+                f"arn:aws:iot:{REGION}:{account_id}:thing/{device_id}"
+                for device_id in device_targets
+            ],
             document=json.dumps(job_document),
             description=f"Firmware update to version {firmware_version}",
             targetSelection="SNAPSHOT",
