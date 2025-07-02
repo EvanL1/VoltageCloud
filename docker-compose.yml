@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  iot-device-simulator:
+    build: .
+    container_name: iot-test-device
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./certificates:/app/certificates:ro
+    command: ["python", "iot_device_simulator.py", "600", "5"]  # 运行10分钟，每5秒发送数据
+    restart: "no"

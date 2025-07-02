@@ -1,54 +1,101 @@
+# AWS IoT Project .gitignore
+
+# CLAUDE.md file
+CLAUDE.md
+
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-.venv/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
-pip-log.txt
-pip-delete-this-directory.txt
+.uv/
 
-# CDK
-cdk.out/
-*.js.map
-*.d.ts
-node_modules/
-
-# AWS
-outputs.json
-cdk.context.json
-
-# IoT Certificates
-certs/
+# AWS Credentials and Config
+.aws/
+aws-credentials.json
 *.pem
-*.crt
 *.key
+*.crt
 
-# Rust
-target/
-Cargo.lock
-lambda-rust/
+# Certificates and Keys
+certificates/
+*.pem.crt
+*.pem.key
+device-id
+/etc/device-id
 
-# IDE
+# Environment variables
+.env.local
+.env.development
+.env.test
+.env.production
+
+# Logs
+*.log
+logs/
+deployment-*.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE files
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
 
-# OS
-.DS_Store
-Thumbs.db
-*.log
+# Docker
+docker-compose.override.yml
 
 # Temporary files
 *.tmp
-*.temp 
-SQS-MIGRATION.md
-*.xml
-tests/reports/parallel_tests.xml
+*.temp
+temp/
+tmp/
+
+# Deployment reports (contain sensitive info)
+*_deployment_report_*.md
+*_deployment_report.txt
+*_device_config.json
+
+# Test files
+test_output/
+test_results/
+
+# Backup files
+*.bak
+*.backup
+EOF < /dev/null
